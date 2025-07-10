@@ -1,11 +1,15 @@
 import assert, * as a from "node:assert";
 import * as t from "node:test";
+import timezoneMock from "timezone-mock";
 
 import { CalendarDate } from "../src/index.js";
 import { inspect } from "node:util";
 
-// 2006-06-27T08:54:16.223Z
-const knownDate = new Date(1151398456223);
+timezoneMock.register("Etc/GMT-14");
+// 2006-06-27T10:54:16.223Z
+// 2006-06-28T00:54:16.223 GMT+1400
+const knownDate = new Date(1151405656223);
+timezoneMock.unregister();
 
 void t.suite("CalendarDate", () => {
   void t.suite("getting a CalendarDate", () => {
@@ -18,9 +22,13 @@ void t.suite("CalendarDate", () => {
       a.strictEqual(date.dayOfWeek, 2);
     });
 
-    // Not fully tested: fromLocalDate
     void t.it("can build from a Date, using the local timezone", () => {
-      a.doesNotThrow(() => CalendarDate.fromLocalDate(knownDate));
+      const date = CalendarDate.fromLocalDate(knownDate);
+
+      a.strictEqual(date.year, 2006);
+      a.strictEqual(date.month0, 5);
+      a.strictEqual(date.day1, 28);
+      a.strictEqual(date.dayOfWeek, 3);
     });
 
     void t.it("can build from year, month0, and date", () => {
@@ -120,7 +128,7 @@ void t.suite("CalendarDate", () => {
   });
 
   void t.suite("toMidnightUTC", () => {
-    const date = CalendarDate.fromUTCDate(knownDate).toMidnightUTC();
+    const date = CalendarDate.fromYM1D(2006, 6, 27).toMidnightUTC();
 
     a.deepStrictEqual(
       {
@@ -143,7 +151,7 @@ void t.suite("CalendarDate", () => {
   });
 
   void t.suite("toMidnightLocal", () => {
-    const date = CalendarDate.fromUTCDate(knownDate).toMidnightLocal();
+    const date = CalendarDate.fromYM1D(2006, 6, 27).toMidnightLocal();
 
     a.deepStrictEqual(
       {
@@ -167,10 +175,6 @@ void t.suite("CalendarDate", () => {
 
   void t.suite("limit of the Gregorian calendar", () => {
     // Earliest allowed date: 15 Oct 1582
-    // ways to make a date:
-
-    // fromUTCDate
-    // fromLocalDate
 
     void t.suite("fromYM0D", () => {
       void t.it("on the limit", () =>
@@ -190,7 +194,21 @@ void t.suite("CalendarDate", () => {
       );
     });
 
-    // add
-    // setparts
+    void t.suite("addDays", () => {
+      const date = CalendarDate.fromYM1D(1582, 10, 20);
+
+      void t.it("on the limit", () => a.doesNotThrow(() => date.addDays(-5)));
+      void t.it("beyond the limit", () => a.throws(() => date.addDays(-6)));
+    });
+
+    void t.suite("setParts", () => {
+      // Lots of cases we could consider, but it suffices to
+      // verify that the check is applied in at least one case.
+      void t.it("applies the limit", () =>
+        a.throws(() =>
+          CalendarDate.fromYM1D(1582, 12, 1).setParts({ month0: 0 }),
+        ),
+      );
+    });
   });
 });

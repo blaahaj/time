@@ -4,11 +4,7 @@ import * as t from "node:test";
 import { CalendarDate, CalendarWeek } from "../src/index.js";
 import { inspect } from "node:util";
 
-// 2006-06-27T08:54:16.223Z
-const knownDate = new Date(1151398456223);
-
-// 2006-06-27
-const knownCalendarDate = CalendarDate.fromUTCDate(knownDate);
+const knownCalendarDate = CalendarDate.fromYM1D(2006, 6, 27);
 
 void t.suite("CalendarWeek", () => {
   void t.it("makes a week from a date", () => {
@@ -23,6 +19,25 @@ void t.suite("CalendarWeek", () => {
       CalendarDate.fromYM1D(2025, 1, 5), // a Sunday
     );
     a.strictEqual(week.toString(), "2025-W01");
+  });
+
+  void t.suite("various specific dates", () => {
+    const addTest = (date: CalendarDate, expectedWeek: string) =>
+      void t.it(date.toString(), () =>
+        a.strictEqual(
+          CalendarWeek.fromCalendarDate(date).toString(),
+          expectedWeek,
+        ),
+      );
+
+    addTest(CalendarDate.fromYM1D(2006, 1, 1), "2005-W52"); // Sunday
+    addTest(CalendarDate.fromYM1D(2007, 1, 1), "2007-W01"); // Monday
+    addTest(CalendarDate.fromYM1D(2008, 1, 1), "2008-W01"); // Tuesday
+    addTest(CalendarDate.fromYM1D(2009, 1, 1), "2009-W01"); // Thursday
+    addTest(CalendarDate.fromYM1D(2010, 1, 1), "2009-W53"); // Friday
+    addTest(CalendarDate.fromYM1D(2011, 1, 1), "2010-W52"); // Saturday
+    addTest(CalendarDate.fromYM1D(2012, 1, 1), "2011-W52"); // Sunday
+    addTest(CalendarDate.fromYM1D(2013, 1, 1), "2013-W01"); // Monday
   });
 
   void t.suite("given a week", () => {
